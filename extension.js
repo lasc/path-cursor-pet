@@ -1,105 +1,56 @@
+const { execFile } = require('node:child_process');
 const vscode = require('vscode');
 
-let petPanel;
-let pendingAction = 'auto';
+const RELEASE_VERSION = 'v0.2.0';
+const PET_DOWNLOAD_URL = `https://github.com/lasc/path-cursor-pet/releases/download/${RELEASE_VERSION}/Patch-Cursor-Pet.zip`;
+const SETUP_URL = 'https://github.com/lasc/path-cursor-pet#install';
 
 function activate(context) {
   context.subscriptions.push(
-    vscode.commands.registerCommand('pathCursorPet.start', () => openPet(context, 'auto')),
-    vscode.commands.registerCommand('pathCursorPet.wave', () => openPet(context, 'waving')),
-    vscode.commands.registerCommand('pathCursorPet.jump', () => openPet(context, 'jumping')),
-    vscode.commands.registerCommand('pathCursorPet.review', () => openPet(context, 'review')),
-    vscode.commands.registerCommand('pathCursorPet.stop', () => petPanel?.dispose()),
+    vscode.commands.registerCommand('pathCursorPet.start', startDesktopPatch),
+    vscode.commands.registerCommand('pathCursorPet.import', importPatch),
+    vscode.commands.registerCommand('pathCursorPet.setup', openSetupGuide),
   );
 }
 
-function openPet(context, action) {
-  pendingAction = action;
-
-  if (petPanel) {
-    petPanel.reveal(vscode.ViewColumn.Beside, true);
-    petPanel.webview.postMessage({ command: 'play', action });
+async function startDesktopPatch() {
+  if (process.platform !== 'darwin') {
+    const choice = await vscode.window.showInformationMessage(
+      'Launch Clawd on Desk to show Patch as a desktop overlay.',
+      'Setup guide',
+    );
+    if (choice === 'Setup guide') await openSetupGuide();
     return;
   }
 
-  petPanel = vscode.window.createWebviewPanel(
-    'pathCursorPet',
-    'Patch Cursor Pet',
-    { viewColumn: vscode.ViewColumn.Beside, preserveFocus: true },
-    {
-      enableScripts: true,
-      retainContextWhenHidden: true,
-      localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')],
-    },
-  );
-
-  petPanel.webview.html = renderPetHtml(petPanel.webview, context.extensionUri);
-
-  petPanel.webview.onDidReceiveMessage(
-    (message) => {
-      if (message?.command === 'ready') {
-        petPanel?.webview.postMessage({ command: 'play', action: pendingAction });
-      }
-    },
-    undefined,
-    context.subscriptions,
-  );
-
-  petPanel.onDidDispose(
-    () => {
-      petPanel = undefined;
-      pendingAction = 'auto';
-    },
-    undefined,
-    context.subscriptions,
-  );
+  execFile('/usr/bin/open', ['-a', 'Clawd on Desk'], async (error) => {
+    if (!error) return;
+    const choice = await vscode.window.showErrorMessage(
+      'Clawd on Desk is not installed. Install it to run Patch as a desktop overlay.',
+      'Setup guide',
+    );
+    if (choice === 'Setup guide') await openSetupGuide();
+  });
 }
 
-function renderPetHtml(webview, extensionUri) {
-  const mediaRoot = vscode.Uri.joinPath(extensionUri, 'media');
-  const styleUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'styles.css'));
-  const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'main.js'));
-  const spriteUri = webview.asWebviewUri(vscode.Uri.joinPath(mediaRoot, 'spritesheet.webp'));
-
-  return `<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${webview.cspSource}; style-src ${webview.cspSource}; script-src ${webview.cspSource};">
-  <link rel="stylesheet" href="${styleUri}">
-  <title>Patch Cursor Pet</title>
-</head>
-<body>
-  <main class="app">
-    <header class="header">
-      <div>
-        <h1>Patch</h1>
-        <p id="status" aria-live="polite">Waking up…</p>
-      </div>
-      <button id="auto-toggle" class="secondary" type="button" aria-pressed="true">Auto: on</button>
-    </header>
-
-    <section id="habitat" class="habitat" aria-label="Patch's habitat">
-      <canvas id="pet" class="pet" width="192" height="208" data-sprite="${spriteUri}" aria-label="Patch, an animated plush Muscovy duck"></canvas>
-    </section>
-
-    <nav class="controls" aria-label="Patch animations">
-      <button type="button" data-action="idle">Idle</button>
-      <button type="button" data-action="waving">Wave</button>
-      <button type="button" data-action="jumping">Jump</button>
-      <button type="button" data-action="waiting">Wait</button>
-      <button type="button" data-action="review">Review</button>
-      <button type="button" data-action="failed">Rest</button>
-    </nav>
-  </main>
-  <script src="${scriptUri}"></script>
-</body>
-</html>`;
+async function importPatch() {
+  const target = vscode.Uri.parse(
+    `clawd://import-pet?url=${encodeURIComponent(PET_DOWNLOAD_URL)}`,
+  );
+  const opened = await vscode.env.openExternal(target);
+  if (!opened) {
+    const choice = await vscode.window.showErrorMessage(
+      'Could not open Clawd on Desk. Install it first, then retry.',
+      'Setup guide',
+    );
+    if (choice === 'Setup guide') await openSetupGuide();
+  }
 }
 
-function deactivate() {
-  petPanel?.dispose();
+function openSetupGuide() {
+  return vscode.env.openExternal(vscode.Uri.parse(SETUP_URL));
 }
+
+function deactivate() {}
 
 module.exports = { activate, deactivate };

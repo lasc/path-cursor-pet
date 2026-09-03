@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0
+
+- Replaced the editor-tab pet with a launcher for a persistent desktop overlay.
+- Added automatic Cursor Agent reactions through Clawd on Desk and Cursor hooks.
+- Added a Codex-compatible `Patch-Cursor-Pet.zip` release artifact.
+- Reworked installation documentation for macOS, Windows, and Linux.
+
 ## 0.1.0
 
 - Added Patch as a Cursor-compatible animated webview pet.

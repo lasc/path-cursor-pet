@@ -2,6 +2,9 @@
 .gitignore
 CHANGELOG.md
 images/**
+media/**
+patch/**
+Patch-Cursor-Pet.zip
 scripts/**
 test/**
 *.vsix

@@ -1,8 +1,8 @@
 {
   "name": "path-cursor-pet",
   "displayName": "Patch Cursor Pet",
-  "description": "Patch, the animated plush Muscovy duck, inside Cursor and VS Code.",
-  "version": "0.1.0",
+  "description": "Launch and set up Patch as a Cursor-aware desktop pet.",
+  "version": "0.2.0",
   "publisher": "lasc",
   "license": "SEE LICENSE IN LICENSE",
   "repository": {
@@ -32,35 +32,27 @@
     "commands": [
       {
         "command": "pathCursorPet.start",
-        "title": "Start Patch",
+        "title": "Start Desktop Patch",
         "category": "Patch Cursor Pet"
       },
       {
-        "command": "pathCursorPet.wave",
-        "title": "Wave",
+        "command": "pathCursorPet.import",
+        "title": "Import or Update Patch",
         "category": "Patch Cursor Pet"
       },
       {
-        "command": "pathCursorPet.jump",
-        "title": "Jump",
-        "category": "Patch Cursor Pet"
-      },
-      {
-        "command": "pathCursorPet.review",
-        "title": "Review",
-        "category": "Patch Cursor Pet"
-      },
-      {
-        "command": "pathCursorPet.stop",
-        "title": "Stop Patch",
+        "command": "pathCursorPet.setup",
+        "title": "Open Setup Guide",
         "category": "Patch Cursor Pet"
       }
     ]
   },
   "scripts": {
-    "test": "node --test",
+    "test": "npm run build:pet && node --test",
+    "build:pet": "node scripts/build-pet-package.mjs",
     "validate": "node scripts/validate-package.mjs",
-    "package": "npm run validate && vsce package --out path-cursor-pet.vsix"
+    "package:vsix": "vsce package --out path-cursor-pet.vsix",
+    "package": "npm run build:pet && npm run validate && npm run package:vsix"
   },
   "devDependencies": {
     "@vscode/vsce": "^3.6.2"

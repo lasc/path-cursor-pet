@@ -1,18 +1,67 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 
 const manifest = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
-const atlas = readFileSync(new URL('../media/spritesheet.webp', import.meta.url));
+const pet = JSON.parse(readFileSync(new URL('../patch/pet.json', import.meta.url), 'utf8'));
+const atlas = readFileSync(new URL('../patch/spritesheet.webp', import.meta.url));
+const archive = readFileSync(new URL('../Patch-Cursor-Pet.zip', import.meta.url));
 
 assert.equal(manifest.name, 'path-cursor-pet');
 assert.equal(manifest.main, './extension.js');
-assert.ok(manifest.contributes.commands.some(({ command }) => command === 'pathCursorPet.start'));
-assert.ok(manifest.contributes.commands.some(({ command }) => command === 'pathCursorPet.stop'));
+assert.equal(manifest.version, '0.2.0');
+assert.deepEqual(
+  manifest.contributes.commands.map(({ command }) => command),
+  ['pathCursorPet.start', 'pathCursorPet.import', 'pathCursorPet.setup'],
+);
 
-const dimensions = readWebpDimensions(atlas);
-assert.deepEqual(dimensions, { width: 1536, height: 2288 });
+assert.deepEqual(pet, {
+  id: 'patch',
+  displayName: 'Patch',
+  description: 'A curious plush Muscovy duck who tends ideas and patiently fixes what matters.',
+  spriteVersionNumber: 2,
+  spritesheetPath: 'spritesheet.webp',
+});
+assert.deepEqual(readWebpDimensions(atlas), { width: 1536, height: 2288 });
 
-console.log('Validated extension manifest and Codex v2 sprite atlas (1536×2288).');
+const zipEntries = readStoredZip(archive);
+assert.deepEqual([...zipEntries.keys()], ['patch/pet.json', 'patch/spritesheet.webp']);
+assert.equal(zipEntries.get('patch/pet.json').toString('utf8'), readFileSync(new URL('../patch/pet.json', import.meta.url), 'utf8'));
+assert.equal(sha256(zipEntries.get('patch/spritesheet.webp')), sha256(atlas));
+
+console.log('Validated desktop companion, Codex v2 manifest, atlas, and import ZIP.');
+
+function sha256(buffer) {
+  return createHash('sha256').update(buffer).digest('hex');
+}
+
+function readStoredZip(buffer) {
+  assert.equal(buffer.readUInt32LE(buffer.length - 22), 0x06054b50);
+  const entryCount = buffer.readUInt16LE(buffer.length - 12);
+  const centralOffset = buffer.readUInt32LE(buffer.length - 6);
+  const entries = new Map();
+  let offset = centralOffset;
+
+  for (let index = 0; index < entryCount; index += 1) {
+    assert.equal(buffer.readUInt32LE(offset), 0x02014b50);
+    assert.equal(buffer.readUInt16LE(offset + 10), 0, 'pet ZIP must use stored entries');
+    const size = buffer.readUInt32LE(offset + 24);
+    const nameLength = buffer.readUInt16LE(offset + 28);
+    const extraLength = buffer.readUInt16LE(offset + 30);
+    const commentLength = buffer.readUInt16LE(offset + 32);
+    const localOffset = buffer.readUInt32LE(offset + 42);
+    const name = buffer.subarray(offset + 46, offset + 46 + nameLength).toString('utf8');
+
+    assert.equal(buffer.readUInt32LE(localOffset), 0x04034b50);
+    const localNameLength = buffer.readUInt16LE(localOffset + 26);
+    const localExtraLength = buffer.readUInt16LE(localOffset + 28);
+    const dataOffset = localOffset + 30 + localNameLength + localExtraLength;
+    entries.set(name, buffer.subarray(dataOffset, dataOffset + size));
+    offset += 46 + nameLength + extraLength + commentLength;
+  }
+
+  return entries;
+}
 
 function readWebpDimensions(buffer) {
   assert.equal(buffer.subarray(0, 4).toString('ascii'), 'RIFF');
@@ -56,5 +105,5 @@ function readWebpDimensions(buffer) {
     offset = dataOffset + size + (size % 2);
   }
 
-  throw new Error('Unable to read WebP dimensions from spritesheet.webp');
+  throw new Error('Unable to read WebP dimensions');
 }
