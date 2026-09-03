@@ -1,0 +1,68 @@
+{
+  "name": "path-cursor-pet",
+  "displayName": "Patch Cursor Pet",
+  "description": "Patch, the animated plush Muscovy duck, inside Cursor and VS Code.",
+  "version": "0.1.0",
+  "publisher": "lasc",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lasc/path-cursor-pet.git"
+  },
+  "homepage": "https://github.com/lasc/path-cursor-pet#readme",
+  "bugs": {
+    "url": "https://github.com/lasc/path-cursor-pet/issues"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "cursor",
+    "pet",
+    "duck",
+    "muscovy",
+    "codex"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "pathCursorPet.start",
+        "title": "Start Patch",
+        "category": "Patch Cursor Pet"
+      },
+      {
+        "command": "pathCursorPet.wave",
+        "title": "Wave",
+        "category": "Patch Cursor Pet"
+      },
+      {
+        "command": "pathCursorPet.jump",
+        "title": "Jump",
+        "category": "Patch Cursor Pet"
+      },
+      {
+        "command": "pathCursorPet.review",
+        "title": "Review",
+        "category": "Patch Cursor Pet"
+      },
+      {
+        "command": "pathCursorPet.stop",
+        "title": "Stop Patch",
+        "category": "Patch Cursor Pet"
+      }
+    ]
+  },
+  "scripts": {
+    "test": "node --test",
+    "validate": "node scripts/validate-package.mjs",
+    "package": "npm run validate && vsce package --out path-cursor-pet.vsix"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.2"
+  }
+}

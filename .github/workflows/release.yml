@@ -1,0 +1,26 @@
+name: Release VSIX
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run package
+      - run: sha256sum path-cursor-pet.vsix > path-cursor-pet.vsix.sha256
+      - run: gh release create "$GITHUB_REF_NAME" path-cursor-pet.vsix path-cursor-pet.vsix.sha256 --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}

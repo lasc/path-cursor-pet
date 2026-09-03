@@ -1,0 +1,9 @@
+.github/**
+.gitignore
+CHANGELOG.md
+images/**
+scripts/**
+test/**
+*.vsix
+*.vsix.sha256
+package-lock.json
