@@ -21,6 +21,12 @@ jobs:
       - run: npm test
       - run: npm run package
       - run: sha256sum path-cursor-pet.vsix > path-cursor-pet.vsix.sha256
-      - run: gh release create "$GITHUB_REF_NAME" path-cursor-pet.vsix path-cursor-pet.vsix.sha256 --generate-notes
+      - name: Publish release assets
         env:
           GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" path-cursor-pet.vsix path-cursor-pet.vsix.sha256 --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" path-cursor-pet.vsix path-cursor-pet.vsix.sha256 --generate-notes
+          fi
